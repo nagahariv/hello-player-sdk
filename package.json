@@ -1,0 +1,27 @@
+{
+  "name": "sample-player-sdk",
+  "version": "1.0.0",
+  "description": "Sample Player SDK",
+  "main": "dist/index.js",
+  "type": "module",
+
+  "scripts": {
+
+    "test": "node tests/player.test.js",
+
+    "build": "rm -rf dist && mkdir dist && cp -r src/* dist/",
+
+    "lint": "eslint src",
+
+    "format": "prettier --write .",
+
+    "format:check": "prettier --check ."
+  },
+
+  "devDependencies": {
+
+    "eslint": "^9.0.0",
+
+    "prettier": "^3.2.5"
+  }
+}
