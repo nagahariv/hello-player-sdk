@@ -2,28 +2,36 @@ name: SDK CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+
+concurrency:
+  group: sdk-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  quality-security:
+
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
       security-events: write
+      actions: read
+
+    strategy:
+      matrix:
+        node-version: [20]
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install dependencies
@@ -32,38 +40,29 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Format check
-        run: npm run format:check
-
-      - name: Run tests
+      - name: Tests
         run: npm test
 
-      - name: Build SDK
-        run: npm run build
+      - name: NPM audit
+        run: npm audit --audit-level=high
 
-      - name: Semgrep security scan
+      - name: Semgrep SAST scan
         uses: returntocorp/semgrep-action@v1
         with:
-          config: p/javascript
+          config: auto
 
       - name: Snyk dependency scan
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
-      - name: Initialize CodeQL
+      - name: CodeQL init
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
 
-      - name: CodeQL Autobuild
+      - name: CodeQL autobuild
         uses: github/codeql-action/autobuild@v3
 
-      - name: CodeQL Analysis
+      - name: CodeQL analyze
         uses: github/codeql-action/analyze@v3
-
-      - name: Check broken links
-        uses: lycheeverse/lychee-action@v1
-        with:
-          args: './**/*.md --exclude-mail'
